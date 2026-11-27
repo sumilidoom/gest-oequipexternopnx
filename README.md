@@ -8,9 +8,10 @@ Mostra, para cada cliente, quais equipamentos em comodato ele tem hoje, com o sa
 saldo = planilha do Milênio (foto na data de corte)
       + remessas Sankhya (TOP 1156) depois da data de corte
       − retornos Sankhya (TOP 1256, 1271, 1997) depois da data de corte
+      − retornos lançados em outras TOPs (1986, 2025, 2027) desde 30/04/2026, só os itens que são equipamento
 ```
 
-Só contam notas confirmadas (STATUSNOTA = L).
+Só contam notas confirmadas (STATUSNOTA = L). As TOPs 1986, 2025 e 2027 não são de comodato, mas foram usadas para devolver equipamento; a planilha do Milênio não as abateu, por isso contam desde o fim do Milênio (`retornos_extras_desde` em `cmd_config`). Uma nota pode ser tirada do saldo com `cmd_notas.ignorar = true` (e o motivo em `motivo_ignorar`).
 
 ## Partes do sistema
 

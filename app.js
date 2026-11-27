@@ -308,7 +308,7 @@ $('btn-exportar').addEventListener('click', () => {
 // ---------------- NOTAS ----------------
 async function carregarNotas() {
   notas = await buscarTudo(() => sb.from('cmd_notas')
-    .select('nunota, numnota, codtipoper, tipo, dtneg, codparc, statusnota, observacao, vinculo_manual, cmd_clientes(nome), cmd_notas_itens(codprod, qtd)')
+    .select('nunota, numnota, codtipoper, tipo, dtneg, codparc, statusnota, observacao, vinculo_manual, ignorar, motivo_ignorar, cmd_clientes(nome), cmd_notas_itens(codprod, qtd)')
     .order('dtneg', { ascending: false }).order('nunota', { ascending: false }))
   desenharNotas()
   desenharGraficoMeses()
@@ -327,7 +327,7 @@ function desenharNotas() {
       <td>${n.numnota ?? '—'}</td><td>${n.codtipoper}</td>
       <td>${n.cmd_clientes ? esc(n.cmd_clientes.nome) + (n.vinculo_manual ? ' <span class="sutil">(vinculado manualmente)</span>' : '') : '<span class="erro">a vincular</span>'}</td>
       <td>${(n.cmd_notas_itens || []).map((i) => `${num(i.qtd)}× ${esc(prodNome.get(i.codprod) || i.codprod)}`).join('<br>')}</td>
-      <td>${n.statusnota === 'L' ? 'Confirmada' : '<span class="erro">Não confirmada</span>'}</td></tr>`).join('')}
+      <td>${n.ignorar ? `<span class="erro" title="${esc(n.motivo_ignorar || '')}">Fora do saldo</span>` : n.statusnota === 'L' ? 'Confirmada' : '<span class="erro">Não confirmada</span>'}</td></tr>`).join('')}
     ${lista.length > 500 ? `<tr><td colspan="7" class="sutil">Mostrando 500 de ${lista.length}. Use a busca para filtrar.</td></tr>` : ''}`
 }
 ;['busca-nota', 'filtro-tipo'].forEach((id) => $(id).addEventListener('input', desenharNotas))

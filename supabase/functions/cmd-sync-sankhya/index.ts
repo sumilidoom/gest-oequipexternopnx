@@ -1,5 +1,5 @@
 // cmd-sync-sankhya — Comodatos: SOMENTE LEITURA no Sankhya.
-// Le as notas de remessa (TOP 1156) e retorno (1256, 1271, 1997) e grava em cmd_notas / cmd_notas_itens.
+// Le as notas de remessa (TOP 1156) e retorno (1256, 1271, 1997; e 1986, 2025, 2027 so com equipamento) e grava em cmd_notas / cmd_notas_itens.
 // Chamada pelo pg_cron a cada 5 min (header x-cron-key = cmd_segredos.cron_secret)
 // ou por usuario logado pelo Sankhya (cmd_usuarios ativo) pelo botao "Atualizar agora".
 // Body opcional: { "completo": true } relê todo o historico; padrao = ultimos 15 dias.
@@ -89,21 +89,36 @@ Deno.serve(async (req) => {
     const tops = [...remessa, ...retorno]
     const filtroData = body?.completo ? '' : ` AND C.DTNEG >= TRUNC(SYSDATE) - ${Number(body?.dias) || 15}`
 
+    // TOPs que nao sao de comodato, mas que tambem recebem devolucao de equipamento (ex.: 1986, 2025, 2027):
+    // so entram as notas com equipamento, a partir de retornos_extras_desde, e so os itens que sao equipamento.
+    const soEquip = String(c.tops_retorno_so_equipamento || '').split(',').map((x) => Number(x.trim())).filter((t) => retorno.includes(t))
+    const desdeExtras = /^\d{4}-\d{2}-\d{2}$/.test(String(c.retornos_extras_desde)) ? String(c.retornos_extras_desde) : '2026-04-30'
+    const { data: eq, error: eEq } = await admin.from('cmd_v_equipamentos').select('codprod')
+    if (eEq) throw new Error('cmd_v_equipamentos: ' + eEq.message)
+    const equip = new Set((eq || []).map((x: any) => Number(x.codprod)))
+    const topsNormais = tops.filter((t) => !soEquip.includes(t))
+    let filtroTop = `C.CODTIPOPER IN (${topsNormais.join(',')})`
+    if (soEquip.length && equip.size) {
+      filtroTop = `(${filtroTop} OR (C.CODTIPOPER IN (${soEquip.join(',')}) AND C.DTNEG >= TO_DATE('${desdeExtras}','YYYY-MM-DD')
+        AND EXISTS (SELECT 1 FROM TGFITE X WHERE X.NUNOTA = C.NUNOTA AND X.CODPROD IN (${[...equip].join(',')}))))`
+    }
+
     const bearer = await sankhyaAuth()
 
     const cab = await consulta(bearer,
       `SELECT C.NUNOTA, C.NUMNOTA, C.CODTIPOPER, C.DTNEG, C.CODPARC, C.STATUSNOTA, SUBSTR(C.OBSERVACAO,1,1000) OBS,
               P.NOMEPARC, P.CGC_CPF
          FROM TGFCAB C JOIN TGFPAR P ON P.CODPARC = C.CODPARC
-        WHERE C.CODTIPOPER IN (${tops.join(',')})${filtroData}`)
+        WHERE ${filtroTop}${filtroData}`)
 
     const nunotas = cab.map((r) => Number(r.NUNOTA))
+    const notaSoEquip = new Set(cab.filter((r) => soEquip.includes(Number(r.CODTIPOPER))).map((r) => Number(r.NUNOTA)))
     const itens: Record<string, any>[] = []
     for (const l of lotes(nunotas, 500)) {
       itens.push(...(await consulta(bearer,
         `SELECT I.NUNOTA, I.SEQUENCIA, I.CODPROD, I.QTDNEG, I.VLRUNIT, P.DESCRPROD
            FROM TGFITE I JOIN TGFPRO P ON P.CODPROD = I.CODPROD
-          WHERE I.NUNOTA IN (${l.join(',')})`)))
+          WHERE I.NUNOTA IN (${l.join(',')})`)).filter((i) => !notaSoEquip.has(Number(i.NUNOTA)) || equip.has(Number(i.CODPROD))))
     }
 
     // Clientes: cria/atualiza pelo CODPARC (exceto a propria Pannemix).
