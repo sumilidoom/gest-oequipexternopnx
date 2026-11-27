@@ -1,0 +1,13 @@
+# Planilhas e exportacoes com dados de clientes: NUNCA enviar ao GitHub (repositorio publico)
+*.csv
+*.xlsx
+*.xls
+*.xlsm
+*.ods
+
+# Arquivos locais
+.env
+.env.*
+.vscode/
+Thumbs.db
+desktop.ini

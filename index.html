@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Comodatos Pannemix</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- LOGIN -->
+  <section id="tela-login" class="login oculto">
+    <form id="form-login" class="cartao">
+      <h1>Comodatos Pannemix</h1>
+      <p class="sutil">Entre com seu usuário do sistema Pannemix.</p>
+      <label>E-mail <input type="email" id="login-email" required autocomplete="username" /></label>
+      <label>Senha <input type="password" id="login-senha" required autocomplete="current-password" /></label>
+      <button type="submit">Entrar</button>
+      <p id="login-erro" class="erro"></p>
+    </form>
+  </section>
+
+  <!-- APLICACAO -->
+  <section id="tela-app" class="oculto">
+    <header class="topo">
+      <h1>Comodatos Pannemix</h1>
+      <div class="topo-direita">
+        <span id="status-sync" class="sutil"></span>
+        <button id="btn-sync" class="secundario">Atualizar agora</button>
+        <button id="btn-sair" class="secundario">Sair</button>
+      </div>
+    </header>
+
+    <div class="resumo" id="resumo"></div>
+
+    <nav class="abas">
+      <button data-aba="saldo" class="ativa">Saldo por cliente</button>
+      <button data-aba="notas">Histórico de notas</button>
+      <button data-aba="pendentes">Retornos para vincular <span id="qtd-pendentes" class="selo"></span></button>
+      <button data-aba="planilha">Planilha inicial</button>
+    </nav>
+
+    <!-- ABA SALDO -->
+    <main id="aba-saldo" class="aba">
+      <div class="filtros">
+        <input id="busca-cliente" type="search" placeholder="Buscar cliente ou código Sankhya..." />
+        <select id="filtro-produto"><option value="">Todos os equipamentos</option></select>
+        <label class="check"><input type="checkbox" id="so-com-saldo" checked /> Só clientes com equipamento</label>
+        <button id="btn-exportar" class="secundario">Exportar CSV</button>
+      </div>
+      <div class="duas-colunas">
+        <div class="lista" id="lista-clientes"></div>
+        <div class="detalhe" id="detalhe-cliente"><p class="sutil">Selecione um cliente.</p></div>
+      </div>
+    </main>
+
+    <!-- ABA NOTAS -->
+    <main id="aba-notas" class="aba oculto">
+      <div class="filtros">
+        <input id="busca-nota" type="search" placeholder="Buscar nº da nota, cliente ou observação..." />
+        <select id="filtro-tipo">
+          <option value="">Remessas e retornos</option>
+          <option value="REMESSA">Só remessas (TOP 1156)</option>
+          <option value="RETORNO">Só retornos (TOP 1256/1271/1997)</option>
+        </select>
+      </div>
+      <div class="tabela-wrap"><table id="tabela-notas"></table></div>
+    </main>
+
+    <!-- ABA PENDENTES -->
+    <main id="aba-pendentes" class="aba oculto">
+      <p class="sutil">Notas de retorno emitidas no nome da própria Pannemix. Leia a observação e escolha o cliente
+        que devolveu os equipamentos. Enquanto não forem vinculadas, <b>não</b> dão baixa no saldo.</p>
+      <div id="lista-pendentes"></div>
+    </main>
+
+    <!-- ABA PLANILHA -->
+    <main id="aba-planilha" class="aba oculto">
+      <div class="cartao">
+        <h2>Saldo inicial (planilha do Milênio)</h2>
+        <p>Data de corte atual: <b id="data-corte-atual">—</b></p>
+        <p class="sutil">O saldo = planilha (foto na data de corte) + notas do Sankhya <b>depois</b> dessa data.
+          Notas até a data de corte já estão contadas na planilha.</p>
+        <ol class="sutil">
+          <li>No Excel, salve a planilha como <b>CSV UTF-8</b>.</li>
+          <li>Escolha o arquivo abaixo e informe a data em que a planilha foi gerada.</li>
+          <li>Clique em <b>Importar</b>. A importação substitui o saldo inicial anterior.</li>
+        </ol>
+        <label>Arquivo CSV <input type="file" id="arquivo-planilha" accept=".csv" /></label>
+        <label>Data da planilha <input type="date" id="data-planilha" /></label>
+        <div class="linha-botoes">
+          <button id="btn-importar">Importar</button>
+          <button id="btn-sugerir" class="secundario">Sugerir data pelas notas</button>
+        </div>
+        <div id="resultado-importacao"></div>
+      </div>
+      <div class="cartao">
+        <h2>Clientes da planilha sem cadastro no Sankhya</h2>
+        <p class="sutil">Clientes que o sistema não conseguiu ligar sozinho a um parceiro do Sankhya. Informe o
+          código do parceiro (CODPARC) para juntar os cadastros, assim as notas de retorno abatem o saldo certo.</p>
+        <div id="lista-sem-sankhya"></div>
+      </div>
+    </main>
+  </section>
+
+  <div id="aviso" class="aviso oculto"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
