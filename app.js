@@ -142,10 +142,10 @@ async function carregarSaldo() {
     `<div class="kpi ${cor} ${extra}"><div class="kpi-icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icone}</svg></div>
      <div><span>${rotulo}</span><b>${valor}</b></div></div>`
   $('resumo').innerHTML =
-    kpi('vermelho', ic.loja, 'Clientes com equipamento', num(comEquip)) +
-    kpi('azul', ic.caixa, 'Equipamentos nas lojas', num(totalQtd)) +
-    kpi('verde', ic.moeda, 'Valor em comodato', moeda(totalValor)) +
-    kpi('laranja', ic.alerta, 'Saldos a conferir', num(negativos), negativos ? 'ativo' : '')
+    kpi('terracota', ic.loja, 'Clientes com equipamento', num(comEquip)) +
+    kpi('ouro', ic.caixa, 'Equipamentos nas lojas', num(totalQtd)) +
+    kpi('creme', ic.moeda, 'Valor em comodato', moeda(totalValor)) +
+    kpi('alerta', ic.alerta, 'Saldos a conferir', num(negativos), negativos ? 'ativo' : '')
 
   desenharGraficoProdutos(positivos)
   desenharClientes()
