@@ -394,7 +394,7 @@ $('btn-importar').addEventListener('click', async () => {
   if (texto.includes('\ufffd')) texto = new TextDecoder('windows-1252').decode(bytes)
   const linhas = lerPlanilha(texto)
   if (!linhas.length) { aviso('Não encontrei linhas válidas. O arquivo está em CSV separado por ponto e vírgula?', 8000); return }
-  if (!confirm(`Importar ${linhas.length} linhas com data de corte ${dataBR(data)}? O saldo inicial anterior será substituído.`)) return
+  if (!confirm(`Importar ${linhas.length} linhas? As notas do Sankhya vão contar a partir de ${dataBR(data)}. O saldo inicial anterior será substituído.`)) return
   const b = $('btn-importar')
   b.disabled = true
   b.textContent = 'Importando...'
@@ -408,6 +408,16 @@ $('btn-importar').addEventListener('click', async () => {
   }
   $('resultado-importacao').innerHTML = `<p>✅ ${num(res.linhas)} linhas importadas, ${num(res.clientes)} clientes.
     ${res.clientes_sem_sankhya ? `<br>⚠ ${res.clientes_sem_sankhya} clientes sem código Sankhya (veja a lista abaixo).` : ''}</p>`
+  await carregarTudo()
+})
+
+// Muda so a data a partir da qual as notas do Sankhya contam, sem reimportar a planilha.
+$('btn-salvar-corte').addEventListener('click', async () => {
+  const data = $('data-planilha').value
+  if (!data) { aviso('Informe a data.'); return }
+  const { error } = await sb.rpc('cmd_definir_data_corte', { p_data: data })
+  if (error) { aviso('Erro: ' + error.message, 8000); return }
+  aviso('Notas do Sankhya passam a contar a partir de ' + dataBR(data))
   await carregarTudo()
 })
 
