@@ -136,21 +136,22 @@
       <main id="aba-planilha" class="aba oculto">
       <div class="cartao">
         <h2>Saldo inicial (planilha do Milênio)</h2>
-        <p>Data de corte atual: <b id="data-corte-atual">—</b></p>
-        <p class="sutil">O saldo = planilha (foto na data de corte) + notas do Sankhya <b>depois</b> dessa data.
-          Notas até a data de corte já estão contadas na planilha.</p>
+        <p>Notas do Sankhya contam a partir de: <b id="data-corte-atual">—</b></p>
+        <p class="sutil">Saldo = planilha do Milênio + remessas e retornos do Sankhya <b>a partir dessa data (inclusive)</b>.
+          Notas anteriores já estão contadas na planilha.</p>
         <ol class="sutil">
           <li>No Excel, salve a planilha como <b>CSV UTF-8</b>.</li>
-          <li>Escolha o arquivo abaixo e informe a data em que a planilha foi gerada.</li>
+          <li>Escolha o arquivo abaixo e informe a partir de que dia as notas do Sankhya devem contar.</li>
           <li>Clique em <b>Importar</b>. A importação substitui o saldo inicial anterior.</li>
         </ol>
         <label class="arquivo" id="area-arquivo">
           <input type="file" id="arquivo-planilha" accept=".csv,text/csv" />
           <span id="nome-arquivo">📄 Clique aqui para escolher o <b>comodatos.csv</b></span>
         </label>
-        <label>Data da planilha <input type="date" id="data-planilha" /></label>
+        <label>Notas do Sankhya a partir de <input type="date" id="data-planilha" /></label>
         <div class="linha-botoes">
           <button id="btn-importar">Importar</button>
+          <button id="btn-salvar-corte" class="secundario">Salvar só a data</button>
           <button id="btn-sugerir" class="secundario">Sugerir data pelas notas</button>
         </div>
         <div id="resultado-importacao"></div>
