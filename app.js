@@ -86,7 +86,7 @@ async function entrarNoApp() {
 async function carregarTudo() {
   try {
     await Promise.all([carregarSaldo(), carregarNotas(), carregarClientes(), carregarConfig(), carregarSemSankhya()])
-    await carregarPendentes()
+    await Promise.all([carregarPendentes(), carregarEstoque()])
     atualizarStatusSync()
   } catch (e) {
     aviso('Erro ao carregar: ' + (e.message || e), 8000)
@@ -302,6 +302,138 @@ $('btn-exportar').addEventListener('click', () => {
   const a = document.createElement('a')
   a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
   a.download = `saldo-comodatos-${new Date().toISOString().slice(0, 10)}.csv`
+  a.click()
+})
+
+// ---------------- ESTOQUE ----------------
+let estoque = [] // linhas de cmd_v_estoque
+
+async function carregarEstoque() {
+  estoque = await buscarTudo(() => sb.from('cmd_v_estoque').select('*').order('codemp').order('produto'))
+  const empresas = [...new Map(estoque.map((e) => [e.codemp, e.empresa])).entries()].sort((a, b) => a[0] - b[0])
+  const sel = $('filtro-empresa')
+  const atual = sel.value
+  sel.innerHTML = '<option value="">Todas as empresas</option>' + empresas.map(([c, n]) => `<option value="${c}">Só ${esc(n)}</option>`).join('')
+  sel.value = atual
+
+  const guardado = estoque.filter((e) => e.situacao === 'EM_ESTOQUE')
+  const somaEmp = (cod) => guardado.filter((e) => e.codemp === cod).reduce((t, e) => t + Number(e.estoque), 0)
+  const nosClientes = saldo.filter((l) => Number(l.saldo) > 0).reduce((t, l) => t + Number(l.saldo), 0)
+  const terceiros = estoque.filter((e) => e.situacao === 'DE_TERCEIROS').reduce((t, e) => t + Number(e.estoque), 0)
+  const ico = {
+    galpao: '<path d="M3 21V8l9-5 9 5v13"/><path d="M7 21v-8h10v8M7 17h10"/>',
+    loja: '<path d="M3 9l1-5h16l1 5M4 9v11h16V9M9 20v-6h6v6"/>',
+    alerta: '<path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01"/>',
+  }
+  const card = (cor, icone, rotulo, valor, extra = '') =>
+    `<div class="kpi ${cor} ${extra}"><div class="kpi-icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icone}</svg></div>
+     <div><span>${rotulo}</span><b>${valor}</b></div></div>`
+  $('resumo-estoque').innerHTML =
+    empresas.map(([c, n], i) => card(i % 2 ? 'ouro' : 'terracota', ico.galpao, `Guardados em ${esc(n)}`, num(somaEmp(c)))).join('') +
+    card('creme', ico.loja, 'Nos clientes (comodato)', num(nosClientes)) +
+    card('alerta', ico.alerta, 'Devolvidos como de terceiros', num(terceiros), terceiros ? 'ativo' : '')
+  const quando = estoque.reduce((m, e) => (e.atualizado_em > m ? e.atualizado_em : m), '')
+  $('estoque-atualizado').textContent = quando ? 'Sankhya em ' + new Date(quando).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : ''
+  desenharEstoque()
+  desenharTerceiros()
+}
+
+function estoqueFiltrado() {
+  const termo = $('busca-estoque').value.trim().toUpperCase()
+  const emp = $('filtro-empresa').value
+  return estoque.filter((e) => e.situacao === 'EM_ESTOQUE' && (!emp || String(e.codemp) === emp) &&
+    (!termo || e.produto.toUpperCase().includes(termo) || String(e.codprod).includes(termo)))
+}
+
+// Uma linha por equipamento: quanto há em cada empresa, nos clientes e no total.
+function linhasPorEquipamento() {
+  const termo = $('busca-estoque').value.trim().toUpperCase()
+  const emp = $('filtro-empresa').value
+  const empresas = [...new Map(estoque.map((e) => [e.codemp, e.empresa])).entries()]
+    .sort((a, b) => a[0] - b[0]).filter(([c]) => !emp || String(c) === emp)
+  const mapa = new Map()
+  const linha = (cod, nome) => {
+    if (!mapa.has(cod)) mapa.set(cod, { codprod: cod, produto: nome, emp: {}, guardado: 0, clientes: 0 })
+    return mapa.get(cod)
+  }
+  for (const e of estoqueFiltrado()) {
+    const l = linha(e.codprod, e.produto)
+    l.emp[e.codemp] = (l.emp[e.codemp] || 0) + Number(e.estoque)
+    l.guardado += Number(e.estoque)
+  }
+  if (!emp) {
+    for (const s of saldo) {
+      if (Number(s.saldo) <= 0) continue
+      if (termo && !s.produto.toUpperCase().includes(termo) && !String(s.codprod).includes(termo)) continue
+      linha(s.codprod, s.produto).clientes += Number(s.saldo)
+    }
+  }
+  const linhas = [...mapa.values()].sort((a, b) => (b.guardado + b.clientes) - (a.guardado + a.clientes) || a.produto.localeCompare(b.produto))
+  return { empresas, linhas, comClientes: !emp }
+}
+
+function desenharEstoque() {
+  const tab = $('tabela-estoque')
+  if ($('estoque-por-local').checked) {
+    const lista = estoqueFiltrado().sort((a, b) => a.codemp - b.codemp || String(a.descrlocal).localeCompare(String(b.descrlocal)) || a.produto.localeCompare(b.produto))
+    tab.innerHTML = `
+      <thead><tr><th>Empresa</th><th>Local</th><th>Cód.</th><th>Equipamento</th><th class="n">Qtd.</th></tr></thead>
+      ${lista.map((e) => `<tr class="${Number(e.estoque) < 0 ? 'negativo' : ''}"><td>${esc(e.empresa)}</td>
+        <td>${esc(e.descrlocal || e.codlocal)} <span class="sutil">(${e.codlocal})</span></td><td>${e.codprod}</td>
+        <td>${esc(e.produto)}</td><td class="n">${num(e.estoque)}</td></tr>`).join('')
+        || '<tr><td colspan="5" class="sutil">Nenhum equipamento encontrado.</td></tr>'}`
+    return
+  }
+  const { empresas, linhas, comClientes } = linhasPorEquipamento()
+  const tot = { emp: {}, guardado: 0, clientes: 0 }
+  for (const l of linhas) {
+    for (const [c] of empresas) tot.emp[c] = (tot.emp[c] || 0) + (l.emp[c] || 0)
+    tot.guardado += l.guardado
+    tot.clientes += l.clientes
+  }
+  const cel = (v) => `<td class="n">${v ? num(v) : '<span class="sutil">—</span>'}</td>`
+  tab.innerHTML = `
+    <thead><tr><th>Cód.</th><th>Equipamento</th>${empresas.map(([, n]) => `<th class="n">${esc(n)}</th>`).join('')}
+      ${empresas.length > 1 ? '<th class="n">Guardados</th>' : ''}${comClientes ? '<th class="n">Nos clientes</th><th class="n">Total</th>' : ''}</tr></thead>
+    ${linhas.map((l) => `<tr class="${l.guardado < 0 ? 'negativo' : ''}"><td>${l.codprod}</td><td>${esc(l.produto)}</td>
+      ${empresas.map(([c]) => cel(l.emp[c])).join('')}${empresas.length > 1 ? cel(l.guardado) : ''}
+      ${comClientes ? cel(l.clientes) + `<td class="n"><b>${num(l.guardado + l.clientes)}</b></td>` : ''}</tr>`).join('')
+      || `<tr><td colspan="${4 + empresas.length}" class="sutil">Nenhum equipamento encontrado.</td></tr>`}
+    ${linhas.length ? `<tr class="total"><td></td><td><b>Total</b></td>${empresas.map(([c]) => `<td class="n"><b>${num(tot.emp[c] || 0)}</b></td>`).join('')}
+      ${empresas.length > 1 ? `<td class="n"><b>${num(tot.guardado)}</b></td>` : ''}
+      ${comClientes ? `<td class="n"><b>${num(tot.clientes)}</b></td><td class="n"><b>${num(tot.guardado + tot.clientes)}</b></td>` : ''}</tr>` : ''}`
+}
+
+function desenharTerceiros() {
+  const lista = estoque.filter((e) => e.situacao === 'DE_TERCEIROS')
+    .sort((a, b) => String(a.nomeparc).localeCompare(String(b.nomeparc)) || a.produto.localeCompare(b.produto))
+  $('painel-terceiros').classList.toggle('oculto', !lista.length)
+  $('qtd-terceiros').textContent = lista.length ? num(lista.reduce((t, e) => t + Number(e.estoque), 0)) + ' equipamentos' : ''
+  $('tabela-terceiros').innerHTML = `
+    <thead><tr><th>Cliente que devolveu</th><th>Empresa</th><th>Local</th><th>Equipamento</th><th class="n">Qtd.</th></tr></thead>
+    ${lista.map((e) => `<tr><td>${esc(e.nomeparc || 'Parceiro ' + e.codparc)} <span class="sutil">(${e.codparc})</span></td>
+      <td>${esc(e.empresa)}</td><td>${esc(e.descrlocal || e.codlocal)}</td><td>${esc(e.produto)}</td><td class="n">${num(e.estoque)}</td></tr>`).join('')}`
+}
+
+;['busca-estoque', 'filtro-empresa', 'estoque-por-local'].forEach((id) => $(id).addEventListener('input', desenharEstoque))
+
+$('btn-exportar-estoque').addEventListener('click', () => {
+  let linhas
+  if ($('estoque-por-local').checked) {
+    linhas = [['Empresa', 'Cod. local', 'Local', 'Cod. produto', 'Equipamento', 'Quantidade']]
+    for (const e of estoqueFiltrado()) linhas.push([e.empresa, e.codlocal, e.descrlocal || '', e.codprod, e.produto, num(e.estoque)])
+  } else {
+    const { empresas, linhas: ls, comClientes } = linhasPorEquipamento()
+    linhas = [['Cod. produto', 'Equipamento', ...empresas.map(([, n]) => n), ...(empresas.length > 1 ? ['Guardados'] : []), ...(comClientes ? ['Nos clientes', 'Total'] : [])]]
+    for (const l of ls) {
+      linhas.push([l.codprod, l.produto, ...empresas.map(([c]) => num(l.emp[c] || 0)), ...(empresas.length > 1 ? [num(l.guardado)] : []),
+        ...(comClientes ? [num(l.clientes), num(l.guardado + l.clientes)] : [])])
+    }
+  }
+  const csv = '\ufeff' + linhas.map((l) => l.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(';')).join('\r\n')
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
+  a.download = `estoque-equipamentos-${new Date().toISOString().slice(0, 10)}.csv`
   a.click()
 })
 

@@ -105,7 +105,7 @@ ol { padding-left: 20px; line-height: 1.8; }
 .cabecalho .sutil { font-size: 13px; display: block; margin-top: 4px; }
 
 /* CARTOES DE RESUMO (KPIs) */
-.resumo { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
+.resumo { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 20px; }
 @media (max-width: 1200px) { .resumo { grid-template-columns: repeat(2, 1fr); } }
 .kpi { background: var(--card); border-radius: var(--raio); padding: 20px; box-shadow: var(--sombra); border: 1px solid var(--linha); display: flex; gap: 16px; align-items: center; position: relative; overflow: hidden; }
 .kpi::after { content: ''; position: absolute; right: -30px; top: -30px; width: 110px; height: 110px; border-radius: 50%; background: var(--kpi-cor-sutil); }
@@ -182,6 +182,7 @@ tr:hover td { background: var(--card-2); }
 td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
 td.n { color: var(--texto); }
 tr.negativo td { color: var(--bordo-claro); font-weight: 600; }
+tr.total td { border-top: 2px solid var(--linha); background: var(--fundo-2); }
 .tag { border-radius: 999px; padding: 3px 10px; font-size: 11px; font-weight: 600; white-space: nowrap; }
 .tag.REMESSA { background: var(--ouro-sutil); color: var(--ouro); }
 .tag.RETORNO { background: var(--terracota-sutil); color: #e8915a; }

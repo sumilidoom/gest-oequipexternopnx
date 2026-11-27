@@ -54,6 +54,9 @@
         <button data-aba="saldo" class="ativa" data-titulo="Painel de comodatos" data-sub="Equipamentos da Pannemix em cada cliente, atualizados pelo Sankhya">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
           Painel</button>
+        <button data-aba="estoque" data-titulo="Estoque de equipamentos" data-sub="O que está guardado na Matriz e em Teresina, segundo o Sankhya">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21V8l9-5 9 5v13"/><path d="M7 21v-8h10v8M7 17h10"/></svg>
+          Estoque</button>
         <button data-aba="notas" data-titulo="Notas fiscais" data-sub="Remessas (TOP 1156) e retornos (TOPs 1256, 1271, 1997, e 1986/2025/2027 só com equipamento) vindos do Sankhya">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8"/></svg>
           Notas fiscais</button>
@@ -106,6 +109,27 @@
             <button id="btn-exportar" class="secundario">Exportar CSV</button>
           </div>
           <div class="tabela-wrap grande"><table id="tabela-clientes"></table></div>
+        </section>
+      </main>
+
+      <!-- ESTOQUE -->
+      <main id="aba-estoque" class="aba oculto">
+        <div class="resumo" id="resumo-estoque"></div>
+        <section class="painel">
+          <div class="painel-topo"><h2>Equipamentos guardados</h2><span id="estoque-atualizado" class="sutil"></span></div>
+          <div class="filtros">
+            <input id="busca-estoque" type="search" placeholder="Buscar equipamento ou código..." />
+            <select id="filtro-empresa"><option value="">Todas as empresas</option></select>
+            <label class="check"><input type="checkbox" id="estoque-por-local" /> Separar por local</label>
+            <button id="btn-exportar-estoque" class="secundario">Exportar CSV</button>
+          </div>
+          <div class="tabela-wrap grande"><table id="tabela-estoque"></table></div>
+        </section>
+        <section class="painel oculto" id="painel-terceiros">
+          <div class="painel-topo"><h2>Devoluções que o Sankhya guardou como bem de terceiros</h2><span id="qtd-terceiros" class="sutil"></span></div>
+          <p class="sutil" style="margin-top:0">Estes equipamentos voltaram dos clientes por notas na TOP 1986 (retorno de bens <b>recebidos</b> em comodato).
+            O Sankhya entende que eles pertencem ao cliente, por isso não entram no estoque da Pannemix acima, mesmo estando no depósito.</p>
+          <div class="tabela-wrap"><table id="tabela-terceiros"></table></div>
         </section>
       </main>
 

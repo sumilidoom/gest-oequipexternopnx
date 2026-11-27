@@ -1,5 +1,6 @@
 // cmd-sync-sankhya — Comodatos: SOMENTE LEITURA no Sankhya.
 // Le as notas de remessa (TOP 1156) e retorno (1256, 1271, 1997; e 1986, 2025, 2027 so com equipamento) e grava em cmd_notas / cmd_notas_itens.
+// Tambem copia o estoque de equipamentos de cada empresa/local (TGFEST) para cmd_estoque.
 // Chamada pelo pg_cron a cada 5 min (header x-cron-key = cmd_segredos.cron_secret)
 // ou por usuario logado pelo Sankhya (cmd_usuarios ativo) pelo botao "Atualizar agora".
 // Body opcional: { "completo": true } relê todo o historico; padrao = ultimos 15 dias.
@@ -193,12 +194,42 @@ Deno.serve(async (req) => {
       removidas = apagar.length
     }
 
+    // Estoque de equipamentos por empresa/local (copia inteira do TGFEST a cada leitura).
+    const grupoEquip = String(c.estoque_grupo_equipamentos || '90000').replace(/[^0-9,]/g, '') || '90000'
+    const listaEquip = [...equip].join(',') || '-1'
+    const est = await consulta(bearer,
+      `SELECT E.CODEMP, E.CODLOCAL, L.DESCRLOCAL, E.CODPROD, P.DESCRPROD, P.USOPROD, P.CODGRUPOPROD, E.TIPO,
+              NVL(E.CODPARC, 0) CODPARC, PA.NOMEPARC, SUM(E.ESTOQUE) ESTOQUE, SUM(E.RESERVADO) RESERVADO
+         FROM TGFEST E JOIN TGFPRO P ON P.CODPROD = E.CODPROD
+         LEFT JOIN TGFLOC L ON L.CODLOCAL = E.CODLOCAL
+         LEFT JOIN TGFPAR PA ON PA.CODPARC = E.CODPARC AND E.CODPARC <> 0
+        WHERE E.ESTOQUE <> 0
+          AND ((E.CODPROD IN (${listaEquip}) AND NVL(P.USOPROD, '-') <> 'R')
+            OR (P.CODGRUPOPROD IN (${grupoEquip}) AND P.USOPROD = 'I'))
+        GROUP BY E.CODEMP, E.CODLOCAL, L.DESCRLOCAL, E.CODPROD, P.DESCRPROD, P.USOPROD, P.CODGRUPOPROD, E.TIPO, NVL(E.CODPARC, 0), PA.NOMEPARC
+       HAVING SUM(E.ESTOQUE) <> 0`)
+    const prodEst = new Map<number, any>()
+    for (const r of est) prodEst.set(Number(r.CODPROD), r)
+    for (const l of lotes([...prodEst.values()], 500)) {
+      const { error } = await admin.from('cmd_produtos').upsert(
+        l.map((r) => ({ codprod: Number(r.CODPROD), descricao: r.DESCRPROD, usoprod: r.USOPROD, codgrupoprod: Number(r.CODGRUPOPROD), atualizado_em: new Date().toISOString() })),
+        { onConflict: 'codprod' })
+      if (error) throw new Error('cmd_produtos (estoque): ' + error.message)
+    }
+    const { error: eEst } = await admin.rpc('cmd_estoque_substituir', {
+      p_linhas: est.map((r) => ({
+        codemp: Number(r.CODEMP), codlocal: Number(r.CODLOCAL), descrlocal: r.DESCRLOCAL, codprod: Number(r.CODPROD),
+        tipo: r.TIPO, codparc: Number(r.CODPARC), nomeparc: r.NOMEPARC, estoque: Number(r.ESTOQUE), reservado: Number(r.RESERVADO || 0),
+      })),
+    })
+    if (eEst) throw new Error('cmd_estoque: ' + eEst.message)
+
     await admin.from('cmd_sync_log').update({
       finalizado_em: new Date().toISOString(), ok: true,
       notas_lidas: cab.length, notas_gravadas: notas.length, notas_removidas: removidas,
     }).eq('id', log?.id)
 
-    return J({ ok: true, notas: notas.length, itens: linhasItens.length, removidas })
+    return J({ ok: true, notas: notas.length, itens: linhasItens.length, removidas, estoque: est.length })
   } catch (e) {
     await admin.from('cmd_sync_log').update({ finalizado_em: new Date().toISOString(), ok: false, erro: String(e) }).eq('id', log?.id)
     return J({ ok: false, error: String(e) }, 500)

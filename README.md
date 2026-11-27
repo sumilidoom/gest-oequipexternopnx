@@ -30,6 +30,7 @@ Abra `index.html` no navegador e entre com o **usuário e a senha do Sankhya** (
 Para bloquear alguém: `update cmd_usuarios set ativo = false where nomusu = 'FULANO';`
 
 - **Saldo por cliente**: o que cada loja tem, com o histórico de notas. Tem exportação para CSV.
+- **Estoque**: quantos e quais equipamentos estão guardados na Matriz e em Teresina (estoque do Sankhya, atualizado a cada sincronização), ao lado do que está nos clientes. Mostra também as devoluções que o Sankhya guardou como bem de terceiros (TOP 1986).
 - **Histórico de notas**: todas as remessas e retornos.
 - **Retornos para vincular**: retornos emitidos no nome da própria Pannemix (CODPARC 1). Escolha o cliente certo pela observação da nota.
 - **Planilha inicial**: importa a planilha do Milênio (CSV UTF-8, separado por `;`) e define a data de corte.
