@@ -131,7 +131,7 @@ async function carregarSaldo() {
     <div class="num"><span class="sutil">Clientes com equipamento</span><b>${num(comEquip)}</b></div>
     <div class="num"><span class="sutil">Equipamentos nas lojas</span><b>${num(totalQtd)}</b></div>
     <div class="num"><span class="sutil">Valor de referência</span><b>${moeda(totalValor)}</b></div>
-    <div class="num" title="Cliente devolveu mais do que consta enviado: conferir planilha/notas"><span class="sutil">Saldos negativos (conferir)</span><b>${num(negativos)}</b></div>`
+    <div class="num ${negativos ? 'alerta' : ''}" title="Cliente devolveu mais do que consta enviado: conferir planilha/notas"><span class="sutil">Saldos negativos (conferir)</span><b>${num(negativos)}</b></div>`
   desenharClientes()
 }
 
@@ -299,19 +299,39 @@ function lerPlanilha(texto) {
   return saida
 }
 
+// Mostra o nome do arquivo escolhido (o campo de arquivo fica invisivel dentro da area pontilhada).
+$('arquivo-planilha').addEventListener('change', () => {
+  const arq = $('arquivo-planilha').files[0]
+  $('area-arquivo').classList.toggle('ok', !!arq)
+  $('nome-arquivo').innerHTML = arq ? `✅ <b>${esc(arq.name)}</b> selecionado — clique para trocar` : '📄 Clique aqui para escolher o <b>comodatos.csv</b>'
+})
+;['dragenter', 'dragover'].forEach((ev) => $('area-arquivo').addEventListener(ev, () => $('area-arquivo').classList.add('arrastando')))
+;['dragleave', 'drop'].forEach((ev) => $('area-arquivo').addEventListener(ev, () => $('area-arquivo').classList.remove('arrastando')))
+
 $('btn-importar').addEventListener('click', async () => {
   const arq = $('arquivo-planilha').files[0]
   const data = $('data-planilha').value
   if (!arq) { aviso('Escolha o arquivo CSV.'); return }
   if (!data) { aviso('Informe a data da planilha.'); return }
-  const linhas = lerPlanilha(await arq.text())
+  if (/\.xlsx?$/i.test(arq.name)) { aviso('Esse arquivo é do Excel (.xlsx). Escolha o comodatos.csv.', 8000); return }
+  // O Excel as vezes salva em ANSI (Windows-1252) em vez de UTF-8: tenta os dois.
+  const bytes = await arq.arrayBuffer()
+  let texto = new TextDecoder('utf-8').decode(bytes)
+  if (texto.includes('\ufffd')) texto = new TextDecoder('windows-1252').decode(bytes)
+  const linhas = lerPlanilha(texto)
   if (!linhas.length) { aviso('Não encontrei linhas válidas. O arquivo está em CSV separado por ponto e vírgula?', 8000); return }
   if (!confirm(`Importar ${linhas.length} linhas com data de corte ${dataBR(data)}? O saldo inicial anterior será substituído.`)) return
   const b = $('btn-importar')
   b.disabled = true
+  b.textContent = 'Importando...'
   const { data: res, error } = await sb.rpc('cmd_importar_planilha', { p_linhas: linhas, p_data_corte: data })
   b.disabled = false
-  if (error) { aviso('Erro na importação: ' + error.message, 10000); return }
+  b.textContent = 'Importar'
+  if (error) {
+    $('resultado-importacao').innerHTML = `<p class="erro">❌ A importação falhou: ${esc(error.message)}</p>`
+    aviso('Erro na importação: ' + error.message, 10000)
+    return
+  }
   $('resultado-importacao').innerHTML = `<p>✅ ${num(res.linhas)} linhas importadas, ${num(res.clientes)} clientes.
     ${res.clientes_sem_sankhya ? `<br>⚠ ${res.clientes_sem_sankhya} clientes sem código Sankhya (veja a lista abaixo).` : ''}</p>`
   await carregarTudo()

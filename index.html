@@ -4,6 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Comodatos Pannemix</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -22,7 +24,10 @@
   <!-- APLICACAO -->
   <section id="tela-app" class="oculto">
     <header class="topo">
-      <h1>Comodatos Pannemix</h1>
+      <div class="marca">
+        <div class="logo">P</div>
+        <div><h1>Comodatos</h1><span class="sub">Equipamentos Pannemix nos clientes</span></div>
+      </div>
       <div class="topo-direita">
         <span id="status-sync" class="sutil"></span>
         <button id="btn-sync" class="secundario">Atualizar agora</button>
@@ -85,7 +90,10 @@
           <li>Escolha o arquivo abaixo e informe a data em que a planilha foi gerada.</li>
           <li>Clique em <b>Importar</b>. A importação substitui o saldo inicial anterior.</li>
         </ol>
-        <label>Arquivo CSV <input type="file" id="arquivo-planilha" accept=".csv" /></label>
+        <label class="arquivo" id="area-arquivo">
+          <input type="file" id="arquivo-planilha" accept=".csv,text/csv" />
+          <span id="nome-arquivo">📄 Clique aqui para escolher o <b>comodatos.csv</b></span>
+        </label>
         <label>Data da planilha <input type="date" id="data-planilha" /></label>
         <div class="linha-botoes">
           <button id="btn-importar">Importar</button>
