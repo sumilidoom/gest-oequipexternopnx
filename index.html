@@ -32,8 +32,8 @@
       <div class="wordmark">Pannemix</div>
       <span class="slogan">O pão nosso é para todos</span>
       <h1>Gestão de comodatos</h1>
-      <p class="sutil">Entre com seu usuário do sistema Pannemix.</p>
-      <label>E-mail <input type="email" id="login-email" required autocomplete="username" /></label>
+      <p class="sutil">Entre com o mesmo usuário e senha que você usa no Sankhya.</p>
+      <label>Usuário do Sankhya <input type="text" id="login-usuario" required autocomplete="username" autocapitalize="characters" spellcheck="false" /></label>
       <label>Senha <input type="password" id="login-senha" required autocomplete="current-password" /></label>
       <button type="submit">Entrar</button>
       <p id="login-erro" class="erro"></p>
@@ -65,6 +65,7 @@
           Planilha inicial</button>
       </nav>
       <div class="lateral-rodape">
+        <div id="usuario-logado"></div>
         <div id="status-sync"></div>
         <button id="btn-sync" class="lateral-btn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>

@@ -39,21 +39,44 @@ async function buscarTudo(montarConsulta) {
 // ---------------- LOGIN ----------------
 async function iniciar() {
   const { data } = await sb.auth.getSession()
-  if (data.session) entrarNoApp()
-  else $('tela-login').classList.remove('oculto')
+  // Sessao antiga (login por e-mail de outro sistema) nao vale aqui: so a aberta pelo Sankhya.
+  if (data.session && data.session.user?.app_metadata?.sistema !== 'comodatos') await sb.auth.signOut()
+  else if (data.session) return entrarNoApp()
+  $('tela-login').classList.remove('oculto')
 }
 
+// Login com usuario e senha do Sankhya: a funcao cmd-login confere no Sankhya e devolve a sessao.
 $('form-login').addEventListener('submit', async (e) => {
   e.preventDefault()
-  $('login-erro').textContent = ''
-  const { error } = await sb.auth.signInWithPassword({ email: $('login-email').value.trim(), password: $('login-senha').value })
-  if (error) { $('login-erro').textContent = 'E-mail ou senha inválidos.'; return }
-  entrarNoApp()
+  const erro = $('login-erro')
+  const botao = e.target.querySelector('button[type="submit"]')
+  erro.textContent = ''
+  botao.disabled = true
+  botao.textContent = 'Conferindo no Sankhya...'
+  try {
+    const { data, error } = await sb.functions.invoke('cmd-login', {
+      body: { usuario: $('login-usuario').value.trim(), senha: $('login-senha').value },
+    })
+    let msg = data?.error
+    if (error && !msg) msg = (await error.context?.json?.().catch(() => null))?.error
+    if (error || !data?.access_token) throw new Error(msg || 'Não foi possível entrar.')
+    const { error: eSessao } = await sb.auth.setSession({ access_token: data.access_token, refresh_token: data.refresh_token })
+    if (eSessao) throw eSessao
+    $('login-senha').value = ''
+    entrarNoApp()
+  } catch (err) {
+    erro.textContent = err.message || String(err)
+  } finally {
+    botao.disabled = false
+    botao.textContent = 'Entrar'
+  }
 })
 
 $('btn-sair').addEventListener('click', async () => { await sb.auth.signOut(); location.reload() })
 
 async function entrarNoApp() {
+  const { data } = await sb.auth.getUser()
+  $('usuario-logado').textContent = data?.user?.app_metadata?.nomusu || ''
   $('tela-login').classList.add('oculto')
   $('tela-app').classList.remove('oculto')
   await carregarTudo()

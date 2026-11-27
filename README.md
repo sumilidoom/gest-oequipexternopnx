@@ -17,13 +17,16 @@ Só contam notas confirmadas (STATUSNOTA = L).
 | Parte | Onde fica |
 |---|---|
 | Tabelas `cmd_*` e views `cmd_v_*` | Supabase (projeto `sistemacomercialpnx`) — SQL em `supabase/migrations/` |
+| Função `cmd-login` (login com usuário e senha do Sankhya) | Supabase Edge Functions — código em `supabase/functions/cmd-login/` |
 | Função `cmd-sync-sankhya` (somente leitura no Sankhya) | Supabase Edge Functions — código em `supabase/functions/cmd-sync-sankhya/` |
 | Agendamento a cada 5 min (últimos 15 dias) + releitura completa diária às 03:40 UTC | `pg_cron`: `cmd_comodato_sync_5min`, `cmd_comodato_sync_completo_diario` |
 | Tela (`index.html`, `app.js`, `style.css`, `config.js`) | Este repositório |
 
 ## Usar a tela
 
-Abra `index.html` no navegador e entre com um usuário do Supabase da Pannemix.
+Abra `index.html` no navegador e entre com o **usuário e a senha do Sankhya** (igual ao Sistema Coletor). A função `cmd-login` confere a senha no Sankhya, que nunca é gravada, e abre a sessão. Só quem entrou assim enxerga os comodatos; logins de outros sistemas do mesmo Supabase não têm acesso.
+
+Para bloquear alguém: `update cmd_usuarios set ativo = false where nomusu = 'FULANO';`
 
 - **Saldo por cliente**: o que cada loja tem, com o histórico de notas. Tem exportação para CSV.
 - **Histórico de notas**: todas as remessas e retornos.

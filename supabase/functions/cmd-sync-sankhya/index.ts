@@ -1,7 +1,7 @@
 // cmd-sync-sankhya — Comodatos: SOMENTE LEITURA no Sankhya.
 // Le as notas de remessa (TOP 1156) e retorno (1256, 1271, 1997) e grava em cmd_notas / cmd_notas_itens.
 // Chamada pelo pg_cron a cada 5 min (header x-cron-key = cmd_segredos.cron_secret)
-// ou por usuario logado (Authorization: Bearer <jwt>) pelo botao "Atualizar agora".
+// ou por usuario logado pelo Sankhya (cmd_usuarios ativo) pelo botao "Atualizar agora".
 // Body opcional: { "completo": true } relê todo o historico; padrao = ultimos 15 dias.
 // Secrets necessarios na Edge Function: SANKHYA_CLIENT_ID, SANKHYA_CLIENT_SECRET, SANKHYA_XTOKEN (opcional SANKHYA_HOST).
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
@@ -14,16 +14,19 @@ const cors = {
 const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
 const J = (o: unknown, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { ...cors, 'Content-Type': 'application/json' } })
 
-async function autorizado(req: Request): Promise<boolean> {
+// Devolve quem chamou: 'cron', 'usuario' (logado pelo Sankhya e ativo em cmd_usuarios) ou null.
+async function autorizado(req: Request): Promise<'cron' | 'usuario' | null> {
   const chave = req.headers.get('x-cron-key')
   if (chave) {
     const { data } = await admin.from('cmd_segredos').select('valor').eq('chave', 'cron_secret').single()
-    return !!data && data.valor === chave
+    return !!data && data.valor === chave ? 'cron' : null
   }
   const auth = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
-  if (!auth) return false
+  if (!auth) return null
   const { data, error } = await admin.auth.getUser(auth)
-  return !error && !!data?.user
+  if (error || !data?.user) return null
+  const { data: u } = await admin.from('cmd_usuarios').select('ativo').eq('user_id', data.user.id).maybeSingle()
+  return u?.ativo ? 'usuario' : null
 }
 
 async function sankhyaAuth(): Promise<string> {
@@ -69,9 +72,12 @@ function lotes<T>(arr: T[], n: number): T[][] {
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
-  if (!(await autorizado(req))) return J({ error: 'nao autorizado' }, 401)
+  const quem = await autorizado(req)
+  if (!quem) return J({ error: 'nao autorizado' }, 401)
 
-  const body = await req.json().catch(() => ({}))
+  const body = (await req.json().catch(() => null)) || {}
+  // Pela tela so roda a leitura curta; a releitura completa (que apaga notas sumidas) e so do cron.
+  if (quem === 'usuario') { body.completo = false; body.dias = Math.min(Number(body.dias) || 15, 30) }
   const { data: log } = await admin.from('cmd_sync_log').insert({}).select('id').single()
 
   try {

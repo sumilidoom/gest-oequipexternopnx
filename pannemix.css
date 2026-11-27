@@ -93,6 +93,8 @@ ol { padding-left: 20px; line-height: 1.8; }
 .menu button.ativa svg { color: var(--terracota); opacity: 1; }
 .menu .selo { margin-left: auto; }
 .lateral-rodape { padding: 14px 14px 18px; border-top: 1px solid var(--linha); }
+#usuario-logado { font-size: 12px; color: var(--creme); font-weight: 600; letter-spacing: .04em; padding: 0 12px 6px; }
+#usuario-logado:empty { display: none; }
 #status-sync { font-size: 12px; color: var(--sutil); display: flex; align-items: center; gap: 8px; padding: 4px 12px 10px; line-height: 1.4; }
 #status-sync::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--verde); box-shadow: 0 0 0 3px var(--verde-sutil); flex-shrink: 0; }
 #status-sync.falha::before { background: var(--bordo-claro); box-shadow: 0 0 0 3px var(--bordo-sutil); }
