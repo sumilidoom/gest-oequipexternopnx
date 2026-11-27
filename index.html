@@ -5,15 +5,33 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Comodatos Pannemix</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Yellowtail&display=swap" />
+  <link rel="stylesheet" href="pannemix.css" />
 </head>
 <body>
+  <!-- Marca Pannemix: desenho do trigo (reaproveitado no login e no menu) -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="pnx-trigo" viewBox="0 0 64 88" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M32 3v27M28.5 8l3.5 3.5L35.5 8M28.5 13.5l3.5 3.5 3.5-3.5M28.5 19l3.5 3.5 3.5-3.5"/>
+      <g transform="rotate(-20 25 28)"><path d="M25 11v18M22 15l3 3 3-3M22 20l3 3 3-3"/></g>
+      <g transform="rotate(20 39 28)"><path d="M39 11v18M36 15l3 3 3-3M36 20l3 3 3-3"/></g>
+      <path d="M32 30v56"/>
+      <path d="M20 42V32a2 2 0 0 1 2-2h4c4 0 6 3 6 8"/>
+      <path d="M16 56V45a2 2 0 0 1 2-2h6c5 0 8 4 8 10"/>
+      <path d="M32 70c0-8-6-13-12-13h-6a2 2 0 0 0-2 2v10c0 6 5 11 11 11h9"/>
+      <path d="M44 40v-8a2 2 0 0 0-2-2h-4c-4 0-6 3-6 8"/>
+      <path d="M48 52v-9a2 2 0 0 0-2-2h-6c-5 0-8 4-8 10"/>
+      <path d="M32 66c0-8 6-12 12-12h6a2 2 0 0 1 2 2v10c0 6-5 10-11 10h-9"/>
+    </symbol>
+  </svg>
+
   <!-- LOGIN -->
   <section id="tela-login" class="login oculto">
     <form id="form-login" class="cartao">
-      <div class="logo">P</div>
-      <h1>Comodatos Pannemix</h1>
+      <svg class="trigo"><use href="#pnx-trigo"/></svg>
+      <div class="wordmark">Pannemix</div>
+      <span class="slogan">O pão nosso é para todos</span>
+      <h1>Gestão de comodatos</h1>
       <p class="sutil">Entre com seu usuário do sistema Pannemix.</p>
       <label>E-mail <input type="email" id="login-email" required autocomplete="username" /></label>
       <label>Senha <input type="password" id="login-senha" required autocomplete="current-password" /></label>
@@ -27,8 +45,9 @@
     <!-- MENU LATERAL -->
     <aside class="lateral">
       <div class="marca">
-        <div class="logo">P</div>
-        <div><b>Pannemix</b><span>Gestão de comodatos</span></div>
+        <svg class="trigo"><use href="#pnx-trigo"/></svg>
+        <div class="wordmark">Pannemix</div>
+        <span class="slogan">Gestão de comodatos</span>
       </div>
       <nav class="menu">
         <div class="menu-titulo">Menu</div>
@@ -72,7 +91,7 @@
           </section>
           <section class="painel">
             <div class="painel-topo"><h2>Remessas x retornos (últimos 12 meses)</h2>
-              <div class="legenda"><span><i style="background:#22c55e"></i>Enviados</span><span><i style="background:#dc2626"></i>Devolvidos</span></div></div>
+              <div class="legenda"><span><i class="leg-env"></i>Enviados</span><span><i class="leg-dev"></i>Devolvidos</span></div></div>
             <div id="graf-meses" class="colunas"></div>
             <div id="graf-meses-rotulos" class="meses"></div>
           </section>
